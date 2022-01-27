@@ -33,11 +33,11 @@ void BuildStack(){
 	
 	for (r=0;r<10;r++){
 	
-        for (rt=0;rt<25;rt++){
-        	
-        	board[r][rt]=0;
-    	}
-    }
+		for (rt=0;rt<25;rt++){
+			
+			board[r][rt]=0;
+		}
+	}
 }
 
 void GenBag(){
@@ -262,7 +262,7 @@ void RotatePiece(){
 		
 			if(
 				tempx[rt]+tempkickx[r]>9 ||
-				tempx[rt]+tempkickx[r]<0 || 
+				tempx[rt]+tempkickx[r]<0 ||
 				tempy[rt]+tempkicky[r]>24 ||
 				tempy[rt]+tempkicky[r]<0 ||
 				board[tempx[rt]+tempkickx[r]][tempy[rt]+tempkicky[r]]==1)
@@ -337,7 +337,7 @@ void SoftDrop(){
 		if(board[piecex[r]][piecey[r]-1]==1 || (piecey[r]-1)<0) return;
 	}
 	
-	for(r=0;r<4;r++){piecey[r]--;}
+	for(r=0;r<4;r++) piecey[r]--;
 }
 
 void main(){
