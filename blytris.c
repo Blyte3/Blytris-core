@@ -26,6 +26,7 @@ const int ikicky[5]={0,0,0,-1,2};
 const int ikicky2[5]={0,0,0,-2,1};
 int holdpiece=-1;
 int clearlines[4];
+char input;
 
 void BuildStack(){
 	
@@ -65,7 +66,7 @@ void LineClear(){
 	
 		for(rt=0;rt<10;rt++){
 		
-			if(board[rt][clearlines[r]]!=1) break;
+			if(board[rt][clearlines[r]]==0) break;
 		}
 		
 		if(rt==10){
@@ -129,7 +130,7 @@ void SpawnPiece(){
 
 	for(r=0;r<4;r++){
 		
-		if(board[spawnlocx[activepiece][r]][spawnlocy[activepiece][r]]==1) death++;
+		if(board[spawnlocx[activepiece][r]][spawnlocy[activepiece][r]]) death++;
 		
 		piecex[r]=spawnlocx[activepiece][r];
 		piecey[r]=spawnlocy[activepiece][r];
@@ -146,7 +147,7 @@ void MovePiece(){
 	
 		if(piecex[r]+direction==-1 || piecex[r]+direction==10) return;
 		
-		if(board[piecex[r]+direction][piecey[r]]==1) return;
+		if(board[piecex[r]+direction][piecey[r]]!=0) return;
 	}
 		
 	for(r=0;r<4;r++) piecex[r]=piecex[r]+direction;
@@ -265,7 +266,7 @@ void RotatePiece(){
 				tempx[rt]+tempkickx[r]<0 ||
 				tempy[rt]+tempkicky[r]>24 ||
 				tempy[rt]+tempkicky[r]<0 ||
-				board[tempx[rt]+tempkickx[r]][tempy[rt]+tempkicky[r]]==1)
+				board[tempx[rt]+tempkickx[r]][tempy[rt]+tempkicky[r]]!=0)
 			{break;}
 		}
 		
@@ -311,11 +312,11 @@ void HardDrop(){
 	
 		for(rt=0;rt<4;rt++){
 			
-			if(piecey[rt]-r==-1 || board[piecex[rt]][piecey[rt]-r]==1){
+			if(piecey[rt]-r==-1 || board[piecex[rt]][piecey[rt]-r]!=0){
 			
 				for(rt=0;rt<4;rt++){
 				
-					board[piecex[rt]][piecey[rt]-r+1]=1;
+					board[piecex[rt]][piecey[rt]-r+1]=activepiece+1;
 					
 					clearlines[rt]=piecey[rt]-r+1;
 				}
@@ -334,7 +335,7 @@ void SoftDrop(){
 
 	for(r=0;r<4;r++){
 	
-		if(board[piecex[r]][piecey[r]-1]==1 || (piecey[r]-1)<0) return;
+		if(board[piecex[r]][piecey[r]-1]!=0 || (piecey[r]-1)<0) return;
 	}
 	
 	for(r=0;r<4;r++) piecey[r]--;
