@@ -12,8 +12,6 @@ int activepiece;
 int queue[14];
 int queueaccesspoint;
 int death=0;
-int direction;
-int rotdir;
 int rotnum;
 int lastrot;
 const int kickx[5]={0,1, 1,0,1};
@@ -46,8 +44,6 @@ void GenBag(int* queue,int index){
 	int randomnumber;
 
 	int r;
-
-	//for(r=0;r<7;r++) randpieces[r]=r;
 	
 	for(r=7;r>0;r--){
 		
@@ -132,7 +128,7 @@ void SpawnPiece(){
 	lastrot=0;
 }
 
-void MovePiece(){
+void MovePiece(int direction){
 	
 	int r;
 	
@@ -146,7 +142,7 @@ void MovePiece(){
 	for(r=0;r<4;r++) piecex[r]=piecex[r]+direction;
 }
 
-void RotatePiece(){
+void RotatePiece(int rotdir){
 
 	int tempkickx[5],tempkicky[5];
 	int tempx[4],tempy[4];
