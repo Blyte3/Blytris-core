@@ -71,14 +71,12 @@ void LineClear(){
 				if(clearlines[r]<clearlines[rt]) clearlines[rt]--;
 			}
 			
-			for(rt=0;rt<10;rt++) board[rt][clearlines[r]]=0;
-			
 			for(rt=0;rt<10;rt++){
 			
 				for(rth=clearlines[r];rth<24;rth++) board[rt][rth]=board[rt][rth+1];
+				
+				board[rt][24]=0;
 			}
-			
-			for(rt=0;rt<10;rt++) board[rt][24]=0;
 		}
 	}
 }
@@ -339,18 +337,5 @@ void main(){
 	
 	while(!death){
 				
-		/*
-		get input
-		decide which functions to call based off input
-		for soft drop, SoftDrop();
-		for clockwise, rotdir=-1; RotatePiece();
-		for counter clockwise, rotdir=1; RotatePiece();
-		for hold, HoldPiece();
-		for left movement, direction=-1; MovePiece();
-		for right movement, direction=1; MovePiece();
-		for hard drop, HardDrop();
-		to quit the game, either kill yourself or increment death when a key is pressed
-		*/
 	}
-	//game over
 }
