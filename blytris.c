@@ -154,23 +154,15 @@ void RotatePiece(int rotdir){
 	
 	if(activepiece==0 || activepiece==3){
 		
-		int eaxis;
+		int iaxis;
 		
-		if(rotdir==-1) eaxis=3;
-		else eaxis=0;
+		if(rotdir==-1) iaxis=3;
+		else iaxis=0;
 		
 		for(r=0;r<4;r++){
-		
-			if(eaxis==r){
 			
-				tempx[r]=piecex[eaxis];
-				tempy[r]=piecey[eaxis];
-			}
-			else{
-			
-				tempx[r]=(piecey[eaxis]-piecey[r])*rotdir+piecex[eaxis];
-				tempy[r]=(piecex[eaxis]-piecex[r])*rotdir*(-1)+piecey[eaxis];
-			}
+			tempx[r]=(piecey[iaxis]-piecey[r])*rotdir+piecex[iaxis];
+			tempy[r]=(piecex[iaxis]-piecex[r])*rotdir*(-1)+piecey[iaxis];
 		}
 		
 		switch(rotnum){
@@ -190,7 +182,9 @@ void RotatePiece(int rotdir){
 			default:
 				for(r=0;r<4;r++) tempy[r]-=rotdir;
 		}		
-			
+		
+		//prepare kick table
+
 		int idirx,idiry;
 		
 		if(lastrot==0 || rotnum==2) idirx=1;
@@ -228,10 +222,7 @@ void RotatePiece(int rotdir){
 		if(rotnum==1 || lastrot==3) kickxdir=-1;
 		else kickxdir=1;
 			
-		tempx[0]=piecex[0];
-		tempy[0]=piecey[0];
-			
-		for(r=1;r<4;r++){
+		for(r=0;r<4;r++){
 			
 			tempx[r]=(piecey[0]-piecey[r])*rotdir+piecex[0];
 			tempy[r]=(piecex[0]-piecex[r])*rotdir*(-1)+piecey[0];
@@ -336,6 +327,7 @@ void main(){
 	SpawnPiece();
 	
 	while(!death){
-				
+		
+		
 	}
 }
