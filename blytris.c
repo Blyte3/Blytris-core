@@ -1,19 +1,16 @@
 #include <time.h>
 #include <stdlib.h>
+#include "blytris.h"
+
+#define ROWS 25
+#define COLS 10
 
 //piece order is ijlostz   ex:spawnlocx[0] holds the x coordinates for i piece spawn
 //the coordinates are x,y coordinates starting from the axis and then from up to down, left to right, except i and o, which also end with another axis point
 
-int board[10][25];
-int piecex[4],piecey[4];
 const int spawnlocx[7][4]={{4,3,6,5},{4,3,3,5},{4,5,3,5},{4,5,4,5},{4,4,5,3},{4,4,3,5},{4,3,4,5}};
 const int spawnlocy[7][4]={{19,19,19,19},{19,20,19,19},{19,20,19,19},{20,19,19,20},{19,20,20,19},{19,20,19,19},{19,20,20,19}};
-int activepiece;
-int queue[14];
-int queueaccesspoint;
-int death=0;
-int rotnum;
-int lastrot;
+int death=0;;
 const int kickx[5]={0,1, 1,0,1};
 const int kicky[5]={0,0,-1,2,2};
 const int kickydir[4]={1,-1,1,-1};
@@ -21,26 +18,29 @@ const int ikickx[5]={0,-2,1,-2,1};
 const int ikickx2[5]={0,-1,2,-1,2};
 const int ikicky[5]={0,0,0,-1,2};
 const int ikicky2[5]={0,0,0,-2,1};
-int holdpiece=-1;
-int clearlines[4];
 char input;
 
-void BuildStack(){
+void resetboard(boardt *board){
 	
 	int r,rt;
 	
-	for (r=0;r<10;r++){
+	for (r=0;r<COLS;r++)
+		for (rt=0;rt<ROWS;rt++)
+			board->board[r][rt]=0;
 	
-		for (rt=0;rt<25;rt++){
-			
-			board[r][rt]=0;
-		}
-	}
+	board->queue.queueindex=0;
+	
+	genbag(board->queue.queue,0);
+	genbag(board->queue.queue,7);
+	
+	board->activepiece=board->queue.queue[board->queue.queueindex];
+	board->isalive=1;
+	board->queue.holdpiece=-1;
 }
 
-void GenBag(int* queue,int index){
+void genbag(pieces *queue,int index){
 
-	int randpieces[7]={0,1,2,3,4,5,6};
+	pieces randpieces[7]={PIECE_O,PIECE_J,PIECE_L,PIECE_O,PIECE_S,PIECE_T,PIECE_Z};
 	int randomnumber;
 
 	int r;
@@ -53,106 +53,101 @@ void GenBag(int* queue,int index){
 	}
 }
 
-void LineClear(){
+void clearlines(boardt *board){
 		
 	int r,rt,rth;
 		
 	for(r=0;r<4;r++){
 	
-		for(rt=0;rt<10;rt++){
+		for(rt=0;rt<COLS;rt++){
 		
-			if(board[rt][clearlines[r]]==0) break;
+			if(board->board[rt][board->rowstocheck[r]]==0) break;
 		}
 		
-		if(rt==10){
+		if(rt==COLS){
 			
 			for(rt=r+1;rt<4;rt++){
 			
-				if(clearlines[r]<clearlines[rt]) clearlines[rt]--;
+				if(board->rowstocheck[r]<board->rowstocheck[rt]) board->rowstocheck[rt]--;
 			}
 			
-			for(rt=0;rt<10;rt++){
+			for(rt=0;rt<COLS;rt++){
 			
-				for(rth=clearlines[r];rth<24;rth++) board[rt][rth]=board[rt][rth+1];
+				for(rth=board->rowstocheck[r];rth<(ROWS-1);rth++) board->board[rt][rth]=board->board[rt][rth+1];
 				
-				board[rt][24]=0;
+				board->board[rt][ROWS-1]=0;
 			}
 		}
 	}
 }
 
-void MoveQueue(){
+void movequeue(boardt *board){
 
 	int r;
 
-	queueaccesspoint++;
+	board->queue.queueindex++;
 	
-	if (queueaccesspoint==7){
+	if (board->queue.queueindex==7){
 	
-		for (r=0;r<7;r++) queue[r]=queue[r+7];
+		for (r=0;r<7;r++) board->queue.queue[r]=board->queue.queue[r+7];
 		
-		GenBag(queue,7);
+		genbag(board->queue.queue,7);
 		
-		queueaccesspoint=0;
+		board->queue.queueindex=0;
 	}	
-	activepiece=queue[queueaccesspoint];
+	board->activepiece=board->queue.queue[board->queue.queueindex];
 }
 
-void InitialQueue(){
-
-	int r;
-
-	queueaccesspoint=0;
-	
-	GenBag(queue,0);
-		
-	GenBag(queue,7);
-	
-	activepiece=queue[queueaccesspoint];
-}
-
-void SpawnPiece(){
+void spawnnewpiece(boardt *board){
 
 	int r;
 
 	for(r=0;r<4;r++){
 		
-		if(board[spawnlocx[activepiece][r]][spawnlocy[activepiece][r]]) death++;
+		if(board->board[spawnlocx[board->activepiece][r]][spawnlocy[board->activepiece][r]]) board->isalive=0;
 		
-		piecex[r]=spawnlocx[activepiece][r];
-		piecey[r]=spawnlocy[activepiece][r];
+		board->piece.piecex[r]=spawnlocx[board->activepiece][r];
+		board->piece.piecey[r]=spawnlocy[board->activepiece][r];
 	}
-	rotnum=0;
-	lastrot=0;
+	board->piece.rotationnum=0;
+	board->piece.lastrot=0;
 }
 
-void MovePiece(int direction){
+void movepiece(boardt *board,int xchange,int ychange){
 	
 	int r;
 	
 	for(r=0;r<4;r++){
 	
-		if(piecex[r]+direction==-1 || piecex[r]+direction==10) return;
+		if(board->piece.piecex[r]+xchange<0
+		|| board->piece.piecex[r]+xchange>(COLS-1)
+		|| board->piece.piecey[r]+ychange<0
+		|| board->piece.piecey[r]+ychange>(ROWS-1)
+		) return;
 		
-		if(board[piecex[r]+direction][piecey[r]]!=0) return;
+		if(board->board[board->piece.piecex[r]+xchange][board->piece.piecey[r]+ychange]!=0) return;
 	}
 		
-	for(r=0;r<4;r++) piecex[r]=piecex[r]+direction;
+	for(r=0;r<4;r++){
+		
+		board->piece.piecex[r]=board->piece.piecex[r]+xchange;
+		board->piece.piecey[r]=board->piece.piecey[r]+ychange;
+	}
 }
 
-void RotatePiece(int rotdir){
+void rotatepiece(boardt *board,int rotdir){
 
-	int tempkickx[5],tempkicky[5];
-	int tempx[4],tempy[4];
+	char tempkickx[5],tempkicky[5];
+	char tempx[4],tempy[4];
 
 	int r,rt;
 	
-	rotnum-=rotdir;
+	board->piece.rotationnum-=rotdir;
 	
-	if(rotnum==-1) rotnum=3;
-	if(rotnum==4) rotnum=0;
+	if(board->piece.rotationnum<0) board->piece.rotationnum=3;
+	if(board->piece.rotationnum>3) board->piece.rotationnum=0;
 	
-	if(activepiece==0 || activepiece==3){
+	if(board->activepiece==PIECE_I || board->activepiece==PIECE_O){
 		
 		int iaxis;
 		
@@ -161,11 +156,11 @@ void RotatePiece(int rotdir){
 		
 		for(r=0;r<4;r++){
 			
-			tempx[r]=(piecey[iaxis]-piecey[r])*rotdir+piecex[iaxis];
-			tempy[r]=(piecex[iaxis]-piecex[r])*rotdir*(-1)+piecey[iaxis];
+			tempx[r]=(board->piece.piecey[iaxis]-board->piece.piecey[r])*rotdir+board->piece.piecex[iaxis];
+			tempy[r]=(board->piece.piecex[iaxis]-board->piece.piecex[r])*(rotdir*(-1))+board->piece.piecey[iaxis];
 		}
 		
-		switch(rotnum){
+		switch(board->piece.rotationnum){
 			
 			case 0:
 				for(r=0;r<4;r++) tempx[r]-=rotdir;
@@ -187,17 +182,17 @@ void RotatePiece(int rotdir){
 
 		int idirx,idiry;
 		
-		if(lastrot==0 || rotnum==2) idirx=1;
+		if(board->piece.lastrot==0 || board->piece.rotationnum==2) idirx=1;
 		else idirx=-1;
 		
-		if(lastrot==3 || rotnum==1) idiry=1;
+		if(board->piece.lastrot==3 || board->piece.rotationnum==1) idiry=1;
 		else idiry=-1;
 		
 		if(
-			(lastrot==1 && rotnum==0) ||
-			(lastrot==2 && rotnum==3) ||
-			(lastrot==0 && rotnum==1) ||
-			(lastrot==3 && rotnum==2))
+			(board->piece.lastrot==1 && board->piece.rotationnum==0) ||
+			(board->piece.lastrot==2 && board->piece.rotationnum==3) ||
+			(board->piece.lastrot==0 && board->piece.rotationnum==1) ||
+			(board->piece.lastrot==3 && board->piece.rotationnum==2))
 		{
 		
 			for(r=0;r<5;r++){
@@ -219,19 +214,19 @@ void RotatePiece(int rotdir){
 	
 		int kickxdir;
 	
-		if(rotnum==1 || lastrot==3) kickxdir=-1;
+		if(board->piece.rotationnum==1 || board->piece.lastrot==3) kickxdir=-1;
 		else kickxdir=1;
 			
 		for(r=0;r<4;r++){
 			
-			tempx[r]=(piecey[0]-piecey[r])*rotdir+piecex[0];
-			tempy[r]=(piecex[0]-piecex[r])*rotdir*(-1)+piecey[0];
+			tempx[r]=(board->piece.piecey[0]-board->piece.piecey[r])*rotdir+board->piece.piecex[0];
+			tempy[r]=(board->piece.piecex[0]-board->piece.piecex[r])*rotdir*(-1)+board->piece.piecey[0];
 		}
 			
 		for(r=0;r<5;r++){
 				
 			tempkickx[r]=kickx[r]*kickxdir;
-			tempkicky[r]=kicky[r]*kickydir[rotnum];
+			tempkicky[r]=kicky[r]*kickydir[board->piece.rotationnum];
 		}
 	}
 		
@@ -239,50 +234,49 @@ void RotatePiece(int rotdir){
 		
 		for(rt=0;rt<4;rt++){
 		
-			if(
-				tempx[rt]+tempkickx[r]>9 ||
-				tempx[rt]+tempkickx[r]<0 ||
-				tempy[rt]+tempkicky[r]>24 ||
-				tempy[rt]+tempkicky[r]<0 ||
-				board[tempx[rt]+tempkickx[r]][tempy[rt]+tempkicky[r]]!=0)
-			{break;}
+			if(tempx[rt]+tempkickx[r]>9
+				||tempx[rt]+tempkickx[r]<0
+				||tempy[rt]+tempkicky[r]>24
+				||tempy[rt]+tempkicky[r]<0
+				||board->board[tempx[rt]+tempkickx[r]][tempy[rt]+tempkicky[r]]!=0)
+			break;
 		}
 		
 		if(rt==4){
 	
 			for(rt=0;rt<4;rt++){
 			
-				piecex[rt]=tempx[rt]+tempkickx[r];
-				piecey[rt]=tempy[rt]+tempkicky[r];
+				board->piece.piecex[rt]=tempx[rt]+tempkickx[r];
+				board->piece.piecey[rt]=tempy[rt]+tempkicky[r];
 			}
 			
-			lastrot=rotnum;
+			board->piece.lastrot=board->piece.rotationnum;
 			
 			return;
 		}
 	}
 	
-	rotnum=lastrot;
+	board->piece.rotationnum=board->piece.lastrot;
 }
 
-void HoldPiece(){
+void holdpiece(boardt *board){
 
-	if(holdpiece==-1){
+	if(board->queue.holdpiece==-1){
 	
-		holdpiece=activepiece;
-		MoveQueue();
-		SpawnPiece();
+		board->queue.holdpiece=board->activepiece;
+		movequeue(board);
+		spawnnewpiece(board);
 	}
 	else{
 	
-		activepiece=holdpiece;
-		holdpiece=queue[queueaccesspoint];
-		queue[queueaccesspoint]=activepiece;
-		SpawnPiece();
+		board->activepiece=board->queue.holdpiece;
+		board->queue.holdpiece=board->queue.queue[board->queue.queueindex];
+		board->queue.queue[board->queue.queueindex]=board->activepiece;
+		spawnnewpiece(board);
 	}
 }
 
-void HardDrop(){
+void harddrop(boardt *board){
 
 	int r,rt;
 	
@@ -290,44 +284,33 @@ void HardDrop(){
 	
 		for(rt=0;rt<4;rt++){
 			
-			if(piecey[rt]-r==-1 || board[piecex[rt]][piecey[rt]-r]!=0){
+			if(board->piece.piecey[rt]-r==-1 || board->board[board->piece.piecex[rt]][board->piece.piecey[rt]-r]!=0){
 			
 				for(rt=0;rt<4;rt++){
 				
-					board[piecex[rt]][piecey[rt]-r+1]=activepiece+1;
+					board->board[board->piece.piecex[rt]][board->piece.piecey[rt]-r+1]=board->activepiece+1;
 					
-					clearlines[rt]=piecey[rt]-r+1;
+					board->rowstocheck[rt]=board->piece.piecey[rt]-r+1;
 				}
-				LineClear();
-				MoveQueue();
-				SpawnPiece();
+				clearlines(board);
+				movequeue(board);
+				spawnnewpiece(board);
 				return;
 			}
 		}
 	}
 }
 
-void SoftDrop(){
-
-	int r;
-
-	for(r=0;r<4;r++){
-	
-		if(board[piecex[r]][piecey[r]-1]!=0 || (piecey[r]-1)<0) return;
-	}
-	
-	for(r=0;r<4;r++) piecey[r]--;
-}
-
 void main(){
 
-	srand(time(0));
-	BuildStack();
-	InitialQueue();
-	SpawnPiece();
+	boardt board;
 	
-	while(!death){
+	srand(time(0));
+	resetboard(&board);
+	spawnnewpiece(&board);
+	
+	while(1){
 		
-		
+		break;
 	}
 }
